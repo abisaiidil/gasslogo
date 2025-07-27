@@ -15,7 +15,7 @@
     }
   </style>
 
-  <!-- ✅ Tambah import map agar module bisa dikenali -->
+  <!-- ✅ Tambahkan importmap -->
   <script type="importmap">
     {
       "imports": {
@@ -29,6 +29,7 @@
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -50,7 +51,13 @@
     const normalMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Normal.webp');
     const roughnessMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Roughness.webp');
 
+    // ✅ Setup DRACOLoader
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
+
     const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
     loader.load('asset/4d%20logo%20gass%20studio.glb', (gltf) => {
       const logo = gltf.scene;
 
