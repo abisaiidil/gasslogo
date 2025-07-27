@@ -28,13 +28,18 @@
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+    import { RectAreaLight } from 'three/addons/lights/RectAreaLight.js';
+    import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+
+    RectAreaLightUniformsLib.init();
 
     const scene = new THREE.Scene();
 
-    // 🔍 Kamera setara Blender (50mm, sensor 36mm)
-    const fov = 2 * Math.atan((36 / 2) / 50) * (180 / Math.PI); // ≈ 39.6 deg
+    // Kamera ¾ view
+    const fov = 39.6;
     const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(-1.63654, -2.67117, 0);
+    camera.position.set(2.5, -2.5, 1.5);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -43,28 +48,41 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    // 🔦 SpotLight dramatis dari kanan-atas-depan
+    // SpotLight: Godrays
     const spotLight = new THREE.SpotLight(0xffffff, 3);
-    spotLight.position.set(3, 5, 3);
-    spotLight.target.position.set(0, 0, 0);
-    spotLight.angle = 0.3;
-    spotLight.penumbra = 0.1;
+    spotLight.position.set(0.809, -0.792, 1.082);
+    spotLight.angle = THREE.MathUtils.degToRad(22.5);
+    spotLight.penumbra = 0.15;
     spotLight.decay = 2;
     spotLight.distance = 15;
-
     spotLight.castShadow = true;
-    spotLight.shadow.mapSize.width = 2048;
-    spotLight.shadow.mapSize.height = 2048;
+    spotLight.shadow.mapSize.set(2048, 2048);
     spotLight.shadow.radius = 2;
-
+    spotLight.target.position.set(0, 0, 0);
     scene.add(spotLight);
     scene.add(spotLight.target);
 
-    // 💡 Ambient light lembut
-    const ambient = new THREE.AmbientLight(0x333333, 0.5);
-    scene.add(ambient);
+    // RectAreaLights
+    const makeRectLight = (color, intensity, width, height, position, target) => {
+      const light = new RectAreaLight(color, intensity, width, height);
+      light.position.set(...position);
+      light.lookAt(...target);
+      scene.add(light);
 
-    // 📦 Load model .glb yang baru
+      const helper = new RectAreaLightHelper(light);
+      light.add(helper); // remove this line to hide helper
+    };
+
+    // Lighting 2 - Highlight kanan belakang
+    makeRectLight(0xffffff, 10, 0.5, 0.5, [-0.6, 1.388, 0.113], [0, 0, 0]);
+
+    // Lighting 3 - Filler kiri belakang
+    makeRectLight(0xffffff, 10, 1, 1, [0.317, 1.652, 0.666], [0, 0, 0]);
+
+    // Lighting 4 - Filler overall
+    makeRectLight(0xffffff, 30, 5, 5, [-1.843, 1.765, -0.4], [0, 0, 0]);
+
+    // Load GLB
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 
@@ -73,7 +91,6 @@
 
     loader.load('asset/gass_logo1.glb', (gltf) => {
       const logo = gltf.scene;
-
       logo.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -86,6 +103,7 @@
 
       function animate() {
         requestAnimationFrame(animate);
+        logo.rotation.y += 0.01;
         renderer.render(scene, camera);
       }
 
