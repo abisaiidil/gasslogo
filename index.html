@@ -18,7 +18,8 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/",
+        "dat.gui": "https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js"
       }
     }
   </script>
@@ -30,15 +31,16 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+    import { GUI } from 'dat.gui';
 
     RectAreaLightUniformsLib.init();
 
     const scene = new THREE.Scene();
 
-    // Kamera sudut kanan-depan, sejajar objek
+    // Kamera sejajar objek dari kanan-depan
     const fov = 39.6;
     const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(-2, -2, 0);
+    camera.position.set(-2, 0, -2);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -47,7 +49,7 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    // SpotLight (godray look)
+    // SpotLight
     const spotLight = new THREE.SpotLight(0xffffff, 1.5);
     spotLight.position.set(0.809, -0.792, 1.082);
     spotLight.angle = THREE.MathUtils.degToRad(22.5);
@@ -62,21 +64,37 @@
     scene.add(spotLight.target);
 
     // RectAreaLights
-    const makeRectLight = (color, intensity, width, height, position, target) => {
-      const light = new RectAreaLight(color, intensity, width, height);
-      light.position.set(...position);
-      light.lookAt(...target);
-      scene.add(light);
-    };
+    const areaLight1 = new RectAreaLight(0xffffff, 3, 0.5, 0.5);
+    areaLight1.position.set(-0.6, 1.388, 0.113);
+    areaLight1.lookAt(0, 0, 0);
+    scene.add(areaLight1);
 
-    // Lighting 2
-    makeRectLight(0xffffff, 3, 0.5, 0.5, [-0.6, 1.388, 0.113], [0, 0, 0]);
+    const areaLight2 = new RectAreaLight(0xffffff, 3, 1, 1);
+    areaLight2.position.set(0.317, 1.652, 0.666);
+    areaLight2.lookAt(0, 0, 0);
+    scene.add(areaLight2);
 
-    // Lighting 3
-    makeRectLight(0xffffff, 3, 1, 1, [0.317, 1.652, 0.666], [0, 0, 0]);
+    const areaLight3 = new RectAreaLight(0xffffff, 8, 5, 5);
+    areaLight3.position.set(-1.843, 1.765, -0.4);
+    areaLight3.lookAt(0, 0, 0);
+    scene.add(areaLight3);
 
-    // Lighting 4
-    makeRectLight(0xffffff, 8, 5, 5, [-1.843, 1.765, -0.4], [0, 0, 0]);
+    // GUI Panel
+    const gui = new GUI();
+    const lightFolder = gui.addFolder('Lighting Controls');
+    lightFolder.add(spotLight, 'visible').name('SpotLight');
+    lightFolder.add(spotLight, 'intensity', 0, 10).name('Spot Intensity');
+
+    lightFolder.add(areaLight1, 'visible').name('Area Light 1');
+    lightFolder.add(areaLight1, 'intensity', 0, 10).name('Area1 Intensity');
+
+    lightFolder.add(areaLight2, 'visible').name('Area Light 2');
+    lightFolder.add(areaLight2, 'intensity', 0, 10).name('Area2 Intensity');
+
+    lightFolder.add(areaLight3, 'visible').name('Area Light 3');
+    lightFolder.add(areaLight3, 'intensity', 0, 20).name('Area3 Intensity');
+
+    lightFolder.open();
 
     // Load GLB
     const dracoLoader = new DRACOLoader();
@@ -97,9 +115,12 @@
       logo.scale.set(1, 1, 1);
       scene.add(logo);
 
+      // Rotasi idle lambat: 360° dalam 62 detik @60fps
+      const rotationSpeed = (2 * Math.PI) / (62 * 60);
+
       function animate() {
         requestAnimationFrame(animate);
-        logo.rotation.y += 0.01;
+        logo.rotation.y += rotationSpeed;
         renderer.render(scene, camera);
       }
 
