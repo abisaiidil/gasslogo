@@ -1,74 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Gass Logo Viewer</title>
-    <style>
-      body, html {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #111;
-      }
-      canvas {
-        display: block;
-      }
-    </style>
-  </head>
-  <body>
-    <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
-      import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+<head>
+  <meta charset="UTF-8" />
+  <title>Gass Logo Viewer</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #111;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 2); // posisi lebih dekat
 
-      const ambient = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-      scene.add(ambient);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-      dirLight.position.set(5, 10, 7);
-      scene.add(dirLight);
+    const ambient = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambient);
 
-      const textureLoader = new THREE.TextureLoader();
-      const baseColor = textureLoader.load('assets/Gass%20Logo_2K32Bit_Base%20Color.webp');
-      const normalMap = textureLoader.load('assets/Gass%20Logo_2K32Bit_Normal.webp');
-      const roughnessMap = textureLoader.load('assets/Gass%20Logo_2K32Bit_Roughness.webp');
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
 
-      const loader = new GLTFLoader();
-      loader.load('assets/4d%20logo%20gass%20studio.glb', (gltf) => {
-        const logo = gltf.scene;
-        logo.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({
-              map: baseColor,
-              normalMap: normalMap,
-              roughnessMap: roughnessMap,
-              roughness: 1.0
-            });
-          }
-        });
+    const textureLoader = new THREE.TextureLoader();
+    const baseColor = textureLoader.load('asset/Gass%20Logo_2K32Bit_Base%20Color.webp');
+    const normalMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Normal.webp');
+    const roughnessMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Roughness.webp');
 
-        scene.add(logo);
-        camera.position.set(0, 0, 2);
+    const loader = new GLTFLoader();
+    loader.load('asset/4d%20logo%20gass%20studio.glb', (gltf) => {
+      const logo = gltf.scene;
 
-        function animate() {
-          requestAnimationFrame(animate);
-          logo.rotation.y += 0.005;
-          renderer.render(scene, camera);
+      logo.traverse((child) => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            map: baseColor,
+            normalMap: normalMap,
+            roughnessMap: roughnessMap,
+            roughness: 1.0
+          });
         }
-
-        animate();
       });
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    </script>
-  </body>
+      logo.scale.set(1, 1, 1); // kalau perlu ubah jadi lebih besar
+      scene.add(logo);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        logo.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    }, undefined, (err) => {
+      console.error('❌ Error loading model:', err);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
 </html>
