@@ -14,8 +14,6 @@
       display: block;
     }
   </style>
-
-  <!-- ✅ Tambahkan importmap -->
   <script type="importmap">
     {
       "imports": {
@@ -32,48 +30,62 @@
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 2);
+
+    // 🔍 Kamera setara Blender (50mm, sensor 36mm)
+    const fov = 2 * Math.atan((36 / 2) / 50) * (180 / Math.PI); // ≈ 39.6 deg
+    const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(-1.63654, -2.67117, 0);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 1);
+    // 🔦 SpotLight dramatis dari kanan-atas-depan
+    const spotLight = new THREE.SpotLight(0xffffff, 3);
+    spotLight.position.set(3, 5, 3);
+    spotLight.target.position.set(0, 0, 0);
+    spotLight.angle = 0.3;
+    spotLight.penumbra = 0.1;
+    spotLight.decay = 2;
+    spotLight.distance = 15;
+
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 2048;
+    spotLight.shadow.mapSize.height = 2048;
+    spotLight.shadow.radius = 2;
+
+    scene.add(spotLight);
+    scene.add(spotLight.target);
+
+    // 💡 Ambient light lembut
+    const ambient = new THREE.AmbientLight(0x333333, 0.5);
     scene.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-
-    const textureLoader = new THREE.TextureLoader();
-    const baseColor = textureLoader.load('asset/Gass%20Logo_2K32Bit_Base%20Color.webp');
-    const normalMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Normal.webp');
-    const roughnessMap = textureLoader.load('asset/Gass%20Logo_2K32Bit_Roughness.webp');
-
-    // ✅ Setup DRACOLoader
+    // 📦 Load model .glb yang baru
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
 
-    loader.load('asset/4d%20logo%20gass%20studio.glb', (gltf) => {
+    loader.load('asset/gass_logo.glb', (gltf) => {
       const logo = gltf.scene;
 
       logo.traverse((child) => {
-  if (child.isMesh) {
-    child.castShadow = true;
-    child.receiveShadow = true;
-  }
-});
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
 
       logo.scale.set(1, 1, 1);
       scene.add(logo);
 
       function animate() {
         requestAnimationFrame(animate);
-        logo.rotation.y += 0.01;
         renderer.render(scene, camera);
       }
 
