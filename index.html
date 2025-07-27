@@ -30,16 +30,15 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-    import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
 
     RectAreaLightUniformsLib.init();
 
     const scene = new THREE.Scene();
 
-    // Kamera ¾ view
+    // Kamera sudut kanan-depan, sejajar objek
     const fov = 39.6;
     const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(2.5, -2.5, 1.5);
+    camera.position.set(-2, -2, 0);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -48,8 +47,8 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    // SpotLight: Godrays
-    const spotLight = new THREE.SpotLight(0xffffff, 3);
+    // SpotLight (godray look)
+    const spotLight = new THREE.SpotLight(0xffffff, 1.5);
     spotLight.position.set(0.809, -0.792, 1.082);
     spotLight.angle = THREE.MathUtils.degToRad(22.5);
     spotLight.penumbra = 0.15;
@@ -68,19 +67,16 @@
       light.position.set(...position);
       light.lookAt(...target);
       scene.add(light);
-
-      const helper = new RectAreaLightHelper(light);
-      light.add(helper); // bisa dihapus nanti
     };
 
-    // Lighting 2 - Highlight kanan belakang
-    makeRectLight(0xffffff, 10, 0.5, 0.5, [-0.6, 1.388, 0.113], [0, 0, 0]);
+    // Lighting 2
+    makeRectLight(0xffffff, 3, 0.5, 0.5, [-0.6, 1.388, 0.113], [0, 0, 0]);
 
-    // Lighting 3 - Filler kiri belakang
-    makeRectLight(0xffffff, 10, 1, 1, [0.317, 1.652, 0.666], [0, 0, 0]);
+    // Lighting 3
+    makeRectLight(0xffffff, 3, 1, 1, [0.317, 1.652, 0.666], [0, 0, 0]);
 
-    // Lighting 4 - Filler overall
-    makeRectLight(0xffffff, 30, 5, 5, [-1.843, 1.765, -0.4], [0, 0, 0]);
+    // Lighting 4
+    makeRectLight(0xffffff, 8, 5, 5, [-1.843, 1.765, -0.4], [0, 0, 0]);
 
     // Load GLB
     const dracoLoader = new DRACOLoader();
