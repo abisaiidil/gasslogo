@@ -4,15 +4,8 @@
   <meta charset="UTF-8" />
   <title>Gass Logo Viewer</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #111;
-    }
-    canvas {
-      display: block;
-    }
+    body, html { margin: 0; padding: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
   </style>
   <script type="importmap">
     {
@@ -25,112 +18,103 @@
   </script>
 </head>
 <body>
-  <script type="module">
-    import * as THREE from 'three';
-    import { RectAreaLight } from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-    import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-    import { GUI } from 'dat.gui';
+<script type="module">
+import * as THREE from 'three';
+import { RectAreaLight } from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { GUI } from 'dat.gui';
 
-    RectAreaLightUniformsLib.init();
-    const scene = new THREE.Scene();
+RectAreaLightUniformsLib.init();
+const scene = new THREE.Scene();
 
-    // Kamera → sesuai Blender
-    const camera = new THREE.PerspectiveCamera(39.6, window.innerWidth/window.innerHeight, 0.1, 100);
-    camera.position.set(1.63654, 0, 2.67117);
-    const angle30 = THREE.MathUtils.degToRad(30);
-    const tx = 1.63654 - Math.sin(angle30);
-    const tz = 2.67117 - Math.cos(angle30);
-    camera.lookAt(tx, 0, tz);
+// Kamera
+const camera = new THREE.PerspectiveCamera(39.6, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(2, 0, 2);
+camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
-    renderer.setSize(window.innerWidth,window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.body.appendChild(renderer.domElement);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
 
-    // SpotLight (Godrays Look)
-    const spotLight = new THREE.SpotLight(0xffffff, 1.5);
-    spotLight.position.set(-0.809349, 1.08194, 0.792389);
-    spotLight.angle = THREE.MathUtils.degToRad(22.5);
-    spotLight.penumbra = 0.15;
-    spotLight.decay = 2;
-    spotLight.distance = 10;
-    spotLight.castShadow = true;
-    spotLight.shadow.mapSize.set(1024,1024);
-    spotLight.shadow.radius = 1;
-    scene.add(spotLight);
+// Lampu: Spot + AreaHighlight + AreaFiller
+const spot = new THREE.SpotLight(0xffffff, 1.5);
+spot.position.set(-0.603417, -1.24213, 0.652694);
+spot.angle = THREE.MathUtils.degToRad(45);
+spot.penumbra = 0.15;
+spot.decay = 2;
+spot.distance = 10;
+spot.castShadow = true;
+scene.add(spot);
 
-    // Hitung arah target berdasarkan Blender Euler
-    const rotX = THREE.MathUtils.degToRad(43.2397);
-    const rotZ = THREE.MathUtils.degToRad(41.8775);
-    const dir = new THREE.Vector3(0, -1, 0);
-    dir.applyEuler(new THREE.Euler(rotX, 0, rotZ, 'XYZ'));
-    const target = spotLight.position.clone().add(dir);
-    spotLight.target.position.copy(target);
-    scene.add(spotLight.target);
+const areaHL = new RectAreaLight(0xffffff, 3, 0.5, 0.5);
+areaHL.position.set(0.741279, 0, -1.38792);
+areaHL.castShadow = true;
+scene.add(areaHL);
 
-    // Area Light 1 — Highlight kanan belakang
-    const areaLight1 = new RectAreaLight(0xffffff, 3, 0.5, 0.5);
-    areaLight1.position.set(0.600035, -0.112965, -1.38792);
-    areaLight1.rotation.set(
-      THREE.MathUtils.degToRad(-51.6998),
-      THREE.MathUtils.degToRad(-90),
-      0
-    );
-    scene.add(areaLight1);
+const areaFiller = new RectAreaLight(0xffffff, 0.5, 5, 5);
+areaFiller.position.set(1.84348, 1.73237, -1.76528);
+areaFiller.castShadow = true;
+scene.add(areaFiller);
 
-    // Area Light 3 — Filler overall
-    const areaLight3 = new RectAreaLight(0xffffff, 0.5, 5, 5);
-    areaLight3.position.set(1.84348, 0.400214, -1.76528);
-    areaLight3.rotation.set(
-      THREE.MathUtils.degToRad(-24.7658),
-      THREE.MathUtils.degToRad(-90),
-      0
-    );
-    scene.add(areaLight3);
+// GUI panel
+const gui = new GUI();
+const spotFolder = gui.addFolder('Spot Light');
+spotFolder.add(spot, 'visible').name('Visible');
+spotFolder.add(spot.position, 'x', -5, 5, 0.01).name('X');
+spotFolder.add(spot.position, 'y', -5, 5, 0.01).name('Y');
+spotFolder.add(spot.position, 'z', -5, 5, 0.01).name('Z');
+spotFolder.add(spot, 'intensity', 0, 10).name('Intensity');
+spotFolder.open();
 
-    // GUI
-    const gui = new GUI();
-    const folder = gui.addFolder('Lighting Controls');
-    folder.add(spotLight, 'visible').name('SpotLight');
-    folder.add(spotLight, 'intensity', 0, 10).name('Spot Intensity');
-    folder.add(areaLight1, 'visible').name('HL Light');
-    folder.add(areaLight1, 'intensity', 0, 10).name('HL Intensity');
-    folder.add(areaLight3, 'visible').name('Filler Light');
-    folder.add(areaLight3, 'intensity', 0, 5).name('Filler Intensity');
-    folder.open();
+const hlFolder = gui.addFolder('Highlight Light');
+hlFolder.add(areaHL, 'visible').name('Visible');
+hlFolder.add(areaHL.position, 'x', -5, 5, 0.01).name('X');
+hlFolder.add(areaHL.position, 'y', -5, 5, 0.01).name('Y');
+hlFolder.add(areaHL.position, 'z', -5, 5, 0.01).name('Z');
+hlFolder.add(areaHL, 'intensity', 0, 10).name('Intensity');
+hlFolder.open();
 
-    // Load GLB
-    const draco = new DRACOLoader();
-    draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(draco);
+const fillerFolder = gui.addFolder('Filler Light');
+fillerFolder.add(areaFiller, 'visible').name('Visible');
+fillerFolder.add(areaFiller.position, 'x', -5, 5, 0.01).name('X');
+fillerFolder.add(areaFiller.position, 'y', -5, 5, 0.01).name('Y');
+fillerFolder.add(areaFiller.position, 'z', -5, 5, 0.01).name('Z');
+fillerFolder.add(areaFiller, 'intensity', 0, 20).name('Intensity');
+fillerFolder.open();
 
-    loader.load('asset/gass_logo1.glb', gltf => {
-      const logo = gltf.scene;
-      logo.traverse(c => {
-        if (c.isMesh) {
-          c.castShadow = true;
-          c.receiveShadow = true;
-        }
-      });
-      scene.add(logo);
-      const rotationSpeed = (2 * Math.PI) / (62 * 60);
-      function animate() {
-        requestAnimationFrame(animate);
-        logo.rotation.y += rotationSpeed;
-        renderer.render(scene, camera);
-      }
-      animate();
-    }, undefined, err => console.error('Error loading model', err));
+// Load model
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
+const loader = new GLTFLoader();
+loader.setDRACOLoader(draco);
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth,window.innerHeight);
-    });
-  </script>
+loader.load('asset/gass_logo1.glb', gltf => {
+  const logo = gltf.scene;
+  logo.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+  scene.add(logo);
+
+  const rotationSpeed = (2 * Math.PI) / (62 * 60);
+  function animate() {
+    requestAnimationFrame(animate);
+    spot.lookAt(0, 0, 0);
+    areaHL.lookAt(0, 0, 0);
+    areaFiller.lookAt(0, 0, 0);
+
+    logo.rotation.y += rotationSpeed;
+    renderer.render(scene, camera);
+  }
+  animate();
+}, undefined, err => console.error(err));
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
 </body>
 </html>
