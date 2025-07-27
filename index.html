@@ -8,7 +8,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #111;
+      background: #0C0D0C;
     }
     canvas {
       display: block;
@@ -37,7 +37,7 @@
 
     const scene = new THREE.Scene();
 
-    // Kamera sejajar objek dari kanan-depan
+    // Kamera depan kanan objek
     const fov = 39.6;
     const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(2, 0, 2);
@@ -49,54 +49,46 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    // SpotLight
+    // SpotLight dari kiri atas depan
     const spotLight = new THREE.SpotLight(0xffffff, 1.5);
-    spotLight.position.set(0.809, -0.792, 1.082);
-    spotLight.angle = THREE.MathUtils.degToRad(22.5);
+    spotLight.position.set(-1.5, 1.5, 1.5);
+    spotLight.angle = THREE.MathUtils.degToRad(25);
     spotLight.penumbra = 0.15;
     spotLight.decay = 2;
-    spotLight.distance = 15;
+    spotLight.distance = 10;
     spotLight.castShadow = true;
-    spotLight.shadow.mapSize.set(2048, 2048);
-    spotLight.shadow.radius = 2;
-    spotLight.target.position.set(0, 0, 0);
+    spotLight.shadow.mapSize.set(1024, 1024);
+    spotLight.shadow.radius = 1;
+
+    // arah natural diagonal
+    spotLight.target.position.set(-1.5, 0.5, 0.5);
     scene.add(spotLight);
     scene.add(spotLight.target);
 
-    // RectAreaLights
+    // Area Light 1: highlight kanan belakang
     const areaLight1 = new RectAreaLight(0xffffff, 3, 0.5, 0.5);
-    areaLight1.position.set(-0.6, 1.388, 0.113);
-    areaLight1.lookAt(0, 0, 0);
+    areaLight1.position.set(1.5, 0, -1.5);
+    areaLight1.rotation.y = Math.PI; // menghadap ke depan (z+)
     scene.add(areaLight1);
 
-    const areaLight2 = new RectAreaLight(0xffffff, 3, 1, 1);
-    areaLight2.position.set(0.317, 1.652, 0.666);
-    areaLight2.lookAt(0, 0, 0);
+    // Area Light 2: filler kanan belakang atas
+    const areaLight2 = new RectAreaLight(0xffffff, 8, 5, 5);
+    areaLight2.position.set(1.5, 1.5, -1.5);
+    areaLight2.rotation.y = Math.PI;
     scene.add(areaLight2);
 
-    const areaLight3 = new RectAreaLight(0xffffff, 8, 5, 5);
-    areaLight3.position.set(-1.843, 1.765, -0.4);
-    areaLight3.lookAt(0, 0, 0);
-    scene.add(areaLight3);
-
-    // GUI Panel
+    // dat.GUI
     const gui = new GUI();
-    const lightFolder = gui.addFolder('Lighting Controls');
-    lightFolder.add(spotLight, 'visible').name('SpotLight');
-    lightFolder.add(spotLight, 'intensity', 0, 10).name('Spot Intensity');
+    const folder = gui.addFolder('Lighting Controls');
+    folder.add(spotLight, 'visible').name('SpotLight');
+    folder.add(spotLight, 'intensity', 0, 10).name('Spot Intensity');
+    folder.add(areaLight1, 'visible').name('Area Light 1');
+    folder.add(areaLight1, 'intensity', 0, 10).name('Highlight Intensity');
+    folder.add(areaLight2, 'visible').name('Area Light 2');
+    folder.add(areaLight2, 'intensity', 0, 20).name('Filler Intensity');
+    folder.open();
 
-    lightFolder.add(areaLight1, 'visible').name('Area Light 1');
-    lightFolder.add(areaLight1, 'intensity', 0, 10).name('Area1 Intensity');
-
-    lightFolder.add(areaLight2, 'visible').name('Area Light 2');
-    lightFolder.add(areaLight2, 'intensity', 0, 10).name('Area2 Intensity');
-
-    lightFolder.add(areaLight3, 'visible').name('Area Light 3');
-    lightFolder.add(areaLight3, 'intensity', 0, 20).name('Area3 Intensity');
-
-    lightFolder.open();
-
-    // Load GLB
+    // Load model
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 
@@ -115,7 +107,7 @@
       logo.scale.set(1, 1, 1);
       scene.add(logo);
 
-      // Rotasi idle lambat: 360° dalam 62 detik @60fps
+      // Rotasi idle 360° dalam 62 detik
       const rotationSpeed = (2 * Math.PI) / (62 * 60);
 
       function animate() {
