@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gass Logo Viewer</title>
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; background: #111; }
-    canvas { display: block; }
-  </style>
+  <style>body, html{margin:0;padding:0;overflow:hidden;background:#111;}canvas{display:block;}</style>
   <script type="importmap">
     {
       "imports": {
@@ -29,64 +26,77 @@ import { GUI } from 'dat.gui';
 RectAreaLightUniformsLib.init();
 const scene = new THREE.Scene();
 
-// Kamera
+// Kamera tetap statis
 const camera = new THREE.PerspectiveCamera(39.6, window.innerWidth/window.innerHeight, 0.1, 100);
 camera.position.set(2, 0, 2);
-camera.lookAt(0, 0, 0);
+camera.lookAt(0,0,0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// Lampu: Spot + AreaHighlight + AreaFiller
-const spot = new THREE.SpotLight(0xffffff, 1.5);
-spot.position.set(-0.603417, -1.24213, 0.652694);
-spot.angle = THREE.MathUtils.degToRad(45);
-spot.penumbra = 0.15;
+// SpotLight (Godrays-like)
+const spot = new THREE.SpotLight(0xffffff, 7);
+spot.position.set(0.6, 1.24, 0.66);
+spot.angle = THREE.MathUtils.degToRad(10);
+spot.penumbra = 0;
 spot.decay = 2;
-spot.distance = 10;
+spot.distance = 15;
 spot.castShadow = true;
+spot.shadow.mapSize.set(2048,2048);
+spot.shadow.radius = 0.5;
 scene.add(spot);
+spot.lookAt(0,0,0);
 
-const areaHL = new RectAreaLight(0xffffff, 3, 0.5, 0.5);
-areaHL.position.set(0.741279, 0, -1.38792);
+// Highlight Light
+const areaHL = new RectAreaLight(0xffffff, 4, 0.5, 0.5);
+areaHL.position.set(-0.74, 0, 1.39);
 areaHL.castShadow = true;
 scene.add(areaHL);
+areaHL.lookAt(0,0,0);
 
+// Filler Light (overall)
 const areaFiller = new RectAreaLight(0xffffff, 0.5, 5, 5);
-areaFiller.position.set(1.84348, 1.73237, -1.76528);
+areaFiller.position.set(-1.84, -1.73, -1.77);
 areaFiller.castShadow = true;
 scene.add(areaFiller);
+areaFiller.lookAt(0,0,0);
 
-// GUI panel
+// dat.GUI
 const gui = new GUI();
-const spotFolder = gui.addFolder('Spot Light');
-spotFolder.add(spot, 'visible').name('Visible');
-spotFolder.add(spot.position, 'x', -5, 5, 0.01).name('X');
-spotFolder.add(spot.position, 'y', -5, 5, 0.01).name('Y');
-spotFolder.add(spot.position, 'z', -5, 5, 0.01).name('Z');
-spotFolder.add(spot, 'intensity', 0, 10).name('Intensity');
-spotFolder.open();
 
-const hlFolder = gui.addFolder('Highlight Light');
-hlFolder.add(areaHL, 'visible').name('Visible');
-hlFolder.add(areaHL.position, 'x', -5, 5, 0.01).name('X');
-hlFolder.add(areaHL.position, 'y', -5, 5, 0.01).name('Y');
-hlFolder.add(areaHL.position, 'z', -5, 5, 0.01).name('Z');
-hlFolder.add(areaHL, 'intensity', 0, 10).name('Intensity');
-hlFolder.open();
+// SpotLight Folder
+const fSpot = gui.addFolder('Spot Light');
+fSpot.add(spot, 'visible').name('Visible');
+fSpot.add(spot.position, 'x', -5, 5, 0.01).name('X');
+fSpot.add(spot.position, 'y', -5, 5, 0.01).name('Y');
+fSpot.add(spot.position, 'z', -5, 5, 0.01).name('Z');
+fSpot.add(spot, 'intensity', 0, 20).name('Intensity');
+fSpot.add(spot, 'angle', 0, Math.PI/2, 0.01).name('Spot Size');
+fSpot.add(spot, 'penumbra', 0, 1, 0.01).name('Blend');
+fSpot.open();
 
-const fillerFolder = gui.addFolder('Filler Light');
-fillerFolder.add(areaFiller, 'visible').name('Visible');
-fillerFolder.add(areaFiller.position, 'x', -5, 5, 0.01).name('X');
-fillerFolder.add(areaFiller.position, 'y', -5, 5, 0.01).name('Y');
-fillerFolder.add(areaFiller.position, 'z', -5, 5, 0.01).name('Z');
-fillerFolder.add(areaFiller, 'intensity', 0, 20).name('Intensity');
-fillerFolder.open();
+// Highlight Folder
+const fHL = gui.addFolder('Highlight Light');
+fHL.add(areaHL, 'visible').name('Visible');
+fHL.add(areaHL.position, 'x', -5, 5, 0.01).name('X');
+fHL.add(areaHL.position, 'y', -5, 5, 0.01).name('Y');
+fHL.add(areaHL.position, 'z', -5, 5, 0.01).name('Z');
+fHL.add(areaHL, 'intensity', 0, 20).name('Intensity');
+fHL.open();
 
-// Load model
+// Filler Folder
+const fFiller = gui.addFolder('Filler Light');
+fFiller.add(areaFiller, 'visible').name('Visible');
+fFiller.add(areaFiller.position, 'x', -5, 5, 0.01).name('X');
+fFiller.add(areaFiller.position, 'y', -5, 5, 0.01).name('Y');
+fFiller.add(areaFiller.position, 'z', -5, 5, 0.01).name('Z');
+fFiller.add(areaFiller, 'intensity', 0, 20).name('Intensity');
+fFiller.open();
+
+// Load dan animasi model
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 const loader = new GLTFLoader();
@@ -94,22 +104,24 @@ loader.setDRACOLoader(draco);
 
 loader.load('asset/gass_logo1.glb', gltf => {
   const logo = gltf.scene;
-  logo.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+  logo.traverse(c => {
+    if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+  });
   scene.add(logo);
 
-  const rotationSpeed = (2 * Math.PI) / (62 * 60);
-  function animate() {
+  const rotSpeed = (2 * Math.PI) / (62 * 60);
+  function animate(){
     requestAnimationFrame(animate);
-    spot.lookAt(0, 0, 0);
-    areaHL.lookAt(0, 0, 0);
-    areaFiller.lookAt(0, 0, 0);
-
-    logo.rotation.y += rotationSpeed;
+    logo.rotation.y += rotSpeed;
+    spot.lookAt(0,0,0);
+    areaHL.lookAt(0,0,0);
+    areaFiller.lookAt(0,0,0);
     renderer.render(scene, camera);
   }
   animate();
 }, undefined, err => console.error(err));
 
+// Resize handler
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
