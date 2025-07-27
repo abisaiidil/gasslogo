@@ -40,7 +40,7 @@
     // Kamera sejajar objek dari kanan-depan
     const fov = 39.6;
     const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(-2, 0, -2);
+    camera.position.set(2, 0, 2);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
