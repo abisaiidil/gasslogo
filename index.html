@@ -62,15 +62,11 @@
       const logo = gltf.scene;
 
       logo.traverse((child) => {
-        if (child.isMesh) {
-          child.material = new THREE.MeshStandardMaterial({
-            map: baseColor,
-            normalMap: normalMap,
-            roughnessMap: roughnessMap,
-            roughness: 1.0
-          });
-        }
-      });
+  if (child.isMesh) {
+    child.castShadow = true;
+    child.receiveShadow = true;
+  }
+});
 
       logo.scale.set(1, 1, 1);
       scene.add(logo);
