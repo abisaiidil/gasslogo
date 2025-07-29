@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Format‑3 Interaction</title>
+    <title>Gass Logo</title>
     <style>
       body { margin: 0; background: #0C0D0C; overflow: hidden; }
       canvas { display: block; }
@@ -14,7 +14,7 @@
         "imports": {
           "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
           "GLTFLoader": "https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js",
-          "OrbitControls": "https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js",
+          "RectAreaLightUniformsLib": "https://unpkg.com/three@0.152.2/examples/jsm/lights/RectAreaLightUniformsLib.js",
           "dat.gui": "https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js"
         }
       }
@@ -23,6 +23,7 @@
     <script type="module">
       import * as THREE from 'three';
       import { GLTFLoader } from 'GLTFLoader';
+      import { RectAreaLightUniformsLib } from 'RectAreaLightUniformsLib';
       import { GUI } from 'dat.gui';
 
       let scene, camera, renderer, model;
@@ -33,88 +34,124 @@
 
       const state = {
         posZ: 0,
-        rotY: 0,
-        dragging: false
+        dragging: false,
+        rotY: 0
       };
 
-      init();
-      animate();
+      RectAreaLightUniformsLib.init();
 
-      function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 0, 2.75);
-        camera.lookAt(0, 0, 0);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 2.75);
+      camera.lookAt(0, 0, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      document.body.appendChild(renderer.domElement);
+
+      const lights = {
+        spot: new THREE.SpotLight(0xffffff, 20),
+        highlight: new THREE.RectAreaLight(0xffffff, 4, 0.2, 0.2),
+        filler: new THREE.RectAreaLight(0xffffff, 0.5, 5, 5)
+      };
+
+      lights.spot.position.set(0.88, 1.44, 0.78);
+      lights.spot.angle = 0.31;
+      lights.spot.penumbra = 0.06;
+      lights.spot.castShadow = true;
+      lights.spot.target.position.set(0, 0, 0);
+      scene.add(lights.spot, lights.spot.target);
+
+      lights.highlight.position.set(-0.64, -0.17, -0.32);
+      lights.highlight.lookAt(0, 0, 0);
+      scene.add(lights.highlight);
+
+      lights.filler.position.set(1.77, -1.73, -1.77);
+      lights.filler.lookAt(0, 0, 0);
+      scene.add(lights.filler);
+
+      const loader = new GLTFLoader();
+      loader.load('asset/gass_logo1.glb', gltf => {
+        model = gltf.scene;
+        scene.add(model);
+      });
+
+      const gui = new GUI();
+      gui.add(state, 'posZ', -5, 5, 0.01).name('Zoom (Z)');
+      gui.add(state, 'dragging').listen();
+      gui.add(state, 'rotY').listen();
+
+      const lightFolder = gui.addFolder('Lights');
+      const spotFolder = lightFolder.addFolder('Spotlight');
+      spotFolder.add(lights.spot, 'intensity', 0, 50).name('Intensity');
+      spotFolder.add(lights.spot, 'angle', 0, Math.PI / 2).name('Spot Size');
+      spotFolder.add(lights.spot, 'penumbra', 0, 1).name('Blend');
+      spotFolder.add(lights.spot.position, 'x', -5, 5).name('X');
+      spotFolder.add(lights.spot.position, 'y', -5, 5).name('Y');
+      spotFolder.add(lights.spot.position, 'z', -5, 5).name('Z');
+
+      const hlFolder = lightFolder.addFolder('Highlight');
+      hlFolder.add(lights.highlight, 'intensity', 0, 50).name('Intensity');
+      hlFolder.add(lights.highlight.position, 'x', -5, 5).name('X');
+      hlFolder.add(lights.highlight.position, 'y', -5, 5).name('Y');
+      hlFolder.add(lights.highlight.position, 'z', -5, 5).name('Z');
+      hlFolder.add(lights.highlight, 'width', 0.01, 5).name('Width');
+      hlFolder.add(lights.highlight, 'height', 0.01, 5).name('Height');
+
+      const fillFolder = lightFolder.addFolder('Filler');
+      fillFolder.add(lights.filler, 'intensity', 0, 50).name('Intensity');
+      fillFolder.add(lights.filler.position, 'x', -5, 5).name('X');
+      fillFolder.add(lights.filler.position, 'y', -5, 5).name('Y');
+      fillFolder.add(lights.filler.position, 'z', -5, 5).name('Z');
+      fillFolder.add(lights.filler, 'width', 0.1, 10).name('Width');
+      fillFolder.add(lights.filler, 'height', 0.1, 10).name('Height');
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
+      });
 
-        const light = new THREE.DirectionalLight(0xffffff, 2);
-        light.position.set(3, 3, 3);
-        scene.add(light);
+      document.addEventListener('mousedown', e => {
+        isDragging = true;
+        previousMousePosition.x = e.clientX;
+      });
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambient);
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
 
-        const loader = new GLTFLoader();
-        loader.load('asset/gass_logo1.glb', gltf => {
-          model = gltf.scene;
-          scene.add(model);
-        });
-
-        window.addEventListener('resize', () => {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        document.addEventListener('mousedown', e => {
-          isDragging = true;
+      document.addEventListener('mousemove', e => {
+        if (isDragging && model) {
+          const deltaX = e.clientX - previousMousePosition.x;
+          targetRotationY += deltaX * 0.005;
           previousMousePosition.x = e.clientX;
-        });
+        }
+      });
 
-        document.addEventListener('mouseup', () => {
-          isDragging = false;
-        });
-
-        document.addEventListener('mousemove', e => {
-          if (isDragging && model) {
-            const deltaX = e.clientX - previousMousePosition.x;
-            targetRotationY += deltaX * 0.005;
-            previousMousePosition.x = e.clientX;
-          }
-        });
-
-        document.addEventListener('wheel', e => {
-          state.posZ += e.deltaY * 0.001;
-        });
-
-        const gui = new GUI();
-        gui.add(state, 'posZ', -5, 5, 0.01).name('Zoom (Z)');
-        gui.add(state, 'dragging').listen();
-        gui.add(state, 'rotY').listen();
-      }
+      document.addEventListener('wheel', e => {
+        state.posZ += e.deltaY * 0.001;
+      });
 
       function animate() {
         requestAnimationFrame(animate);
         if (!model) return;
 
         state.dragging = isDragging;
-
         if (!isDragging) {
-          targetRotationY += (2 * Math.PI) / (62 * 60); // idle speed
+          targetRotationY += (2 * Math.PI) / (62 * 60);
         }
 
         currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
         model.rotation.y = currentRotationY;
         model.position.z = THREE.MathUtils.lerp(model.position.z, state.posZ, 0.1);
-
         state.rotY = model.rotation.y.toFixed(2);
 
         renderer.render(scene, camera);
       }
+
+      animate();
     </script>
   </body>
 </html>
