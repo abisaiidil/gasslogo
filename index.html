@@ -31,7 +31,7 @@ RectAreaLightUniformsLib.init();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(39.6, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 2.75);
+camera.position.set(0, 0, 3);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -49,9 +49,9 @@ controls.zoomSpeed = 1.2;
 
 // Lights
 const spot = new THREE.SpotLight(0xffffff, 20);
-spot.position.set(0.88, 1.44, 0.78);
-spot.angle = 0.31;
-spot.penumbra = 0.06;
+spot.position.set(0.34, 1, 0.45);
+spot.angle = 0.34;
+spot.penumbra = 0.3;
 spot.decay = 2;
 spot.distance = 15;
 spot.castShadow = true;
@@ -60,13 +60,13 @@ spot.shadow.radius = 0.5;
 scene.add(spot);
 spot.lookAt(0, 0, 0);
 
-const areaHL = new RectAreaLight(0xffffff, 4, 0.2, 0.2);
-areaHL.position.set(-0.64, -0.17, -0.32);
+const areaHL = new RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
+areaHL.position.set(-0.65, -0.1, -0.43);
 areaHL.castShadow = true;
 scene.add(areaHL);
 areaHL.lookAt(0, 0, 0);
 
-const areaFiller = new RectAreaLight(0xffffff, 0.5, 5, 5);
+const areaFiller = new RectAreaLight(0xffffff, 0.4, 5, 5);
 areaFiller.position.set(1.77, -1.73, -1.77);
 areaFiller.castShadow = true;
 scene.add(areaFiller);
@@ -102,14 +102,14 @@ fF.add(areaFiller.position, 'z', -5, 5, 0.01).name('Pos Z');
 fF.add(areaFiller, 'intensity', 0, 50).name('Intensity');
 fF.open();
 
-// NEW: Camera Position GUI
+// Camera GUI
 const fCam = gui.addFolder('Camera Position');
 fCam.add(camera.position, 'x', -10, 10, 0.01).name('Pos X');
 fCam.add(camera.position, 'y', -10, 10, 0.01).name('Pos Y');
 fCam.add(camera.position, 'z', -10, 10, 0.01).name('Pos Z');
 fCam.open();
 
-// Load model and render
+// Load model
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 const loader = new GLTFLoader();
@@ -122,7 +122,7 @@ loader.load('asset/gass_logo1.glb', gltf => {
 
   function animate() {
     requestAnimationFrame(animate);
-    camera.lookAt(0, 0, 0); // kamera selalu menghadap ke objek
+    camera.lookAt(0, 0, 0);
     spot.lookAt(0, 0, 0);
     areaHL.lookAt(0, 0, 0);
     areaFiller.lookAt(0, 0, 0);
