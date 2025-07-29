@@ -108,25 +108,21 @@ draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/li
 const loader = new GLTFLoader();
 loader.setDRACOLoader(draco);
 
-let paused = false;
-document.body.addEventListener('click', () => paused = !paused);
-
 loader.load('asset/gass_logo1.glb', gltf => {
   const logo = gltf.scene;
   logo.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
   scene.add(logo);
 
-//  const rotSpeed = (2 * Math.PI) / (62 * 60);
-//  function animate() {
-//    requestAnimationFrame(animate);
-//    if (!paused) logo.rotation.y += rotSpeed;
-//    spot.lookAt(0, 0, 0);
-//    areaHL.lookAt(0, 0, 0);
-//    areaFiller.lookAt(0, 0, 0);
-//    controls.update();
-//    renderer.render(scene, camera);
-//  }
-//  animate();
+function animate() {
+  requestAnimationFrame(animate);
+  // logo.rotation.y += rotSpeed; // idle rotation removed
+  spot.lookAt(0, 0, 0);
+  areaHL.lookAt(0, 0, 0);
+  areaFiller.lookAt(0, 0, 0);
+  controls.update();
+  renderer.render(scene, camera);
+}
+  animate();
 });
 
 window.addEventListener('resize', () => {
