@@ -102,7 +102,14 @@ fF.add(areaFiller.position, 'z', -5, 5, 0.01).name('Pos Z');
 fF.add(areaFiller, 'intensity', 0, 50).name('Intensity');
 fF.open();
 
-// Load model and animate
+// NEW: Camera Position GUI
+const fCam = gui.addFolder('Camera Position');
+fCam.add(camera.position, 'x', -10, 10, 0.01).name('Pos X');
+fCam.add(camera.position, 'y', -10, 10, 0.01).name('Pos Y');
+fCam.add(camera.position, 'z', -10, 10, 0.01).name('Pos Z');
+fCam.open();
+
+// Load model and render
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
 const loader = new GLTFLoader();
@@ -113,15 +120,15 @@ loader.load('asset/gass_logo1.glb', gltf => {
   logo.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
   scene.add(logo);
 
-function animate() {
-  requestAnimationFrame(animate);
-  // logo.rotation.y += rotSpeed; // idle rotation removed
-  spot.lookAt(0, 0, 0);
-  areaHL.lookAt(0, 0, 0);
-  areaFiller.lookAt(0, 0, 0);
-  controls.update();
-  renderer.render(scene, camera);
-}
+  function animate() {
+    requestAnimationFrame(animate);
+    camera.lookAt(0, 0, 0); // kamera selalu menghadap ke objek
+    spot.lookAt(0, 0, 0);
+    areaHL.lookAt(0, 0, 0);
+    areaFiller.lookAt(0, 0, 0);
+    controls.update();
+    renderer.render(scene, camera);
+  }
   animate();
 });
 
