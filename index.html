@@ -2,159 +2,130 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>3D Model Viewer</title>
+    <title>3D Object Viewer</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
+        background-color: #000;
+      }
+      canvas {
+        display: block;
       }
     </style>
   </head>
   <body>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.18.0/dist/lil-gui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
 
     <script>
-      const scene = new THREE.Scene();
+      let scene = new THREE.Scene();
 
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 0, 3);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.shadowMap.enabled = true;
       document.body.appendChild(renderer.domElement);
 
+      // Kontrol kamera
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.1;
+      controls.enablePan = false;
+
+      // Lighting
+      const spotLight = new THREE.SpotLight(0xffffff, 20, 10, 0.34, 0.3);
+      spotLight.position.set(0.34, 1, 0.45);
+      spotLight.castShadow = true;
+      scene.add(spotLight);
+
+      const rectAreaLight = new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
+      rectAreaLight.position.set(-0.65, -0.1, -0.43);
+      scene.add(rectAreaLight);
+
+      const fillerLight = new THREE.PointLight(0xffffff, 0.4);
+      fillerLight.position.set(1.77, -1.73, -1.77);
+      scene.add(fillerLight);
+
+      THREE.RectAreaLightUniformsLib.init();
+
+      // Load model
       const loader = new THREE.GLTFLoader();
       let model;
-
-      loader.load('model.glb', function (gltf) {
+      loader.load("scene.gltf", function (gltf) {
         model = gltf.scene;
+        model.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
         scene.add(model);
       });
 
-      // Lighting setup
-      const spotLight = new THREE.SpotLight(0xffffff, 20);
-      spotLight.position.set(0.34, 1, 0.45);
-      spotLight.angle = 0.34;
-      spotLight.penumbra = 0.3;
-      scene.add(spotLight);
+      // GUI
+      const gui = new dat.GUI();
 
-      const highlight = new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
-      highlight.position.set(-0.65, -0.1, -0.43);
-      scene.add(highlight);
+      const lightFolder = gui.addFolder("Lighting");
+      lightFolder.add(spotLight.position, "x", -5, 5).name("Spot X");
+      lightFolder.add(spotLight.position, "y", -5, 5).name("Spot Y");
+      lightFolder.add(spotLight.position, "z", -5, 5).name("Spot Z");
+      lightFolder.add(spotLight, "intensity", 0, 50).name("Spot Intensity");
+      lightFolder.add(spotLight, "angle", 0, Math.PI / 2).name("Spot Size");
+      lightFolder.add(spotLight, "penumbra", 0, 1).name("Spot Blend");
 
-      const filler = new THREE.PointLight(0xffffff, 0.4);
-      filler.position.set(1.77, -1.73, -1.77);
-      scene.add(filler);
+      const highlightFolder = gui.addFolder("Highlight Light");
+      highlightFolder.add(rectAreaLight.position, "x", -5, 5).name("Rect X");
+      highlightFolder.add(rectAreaLight.position, "y", -5, 5).name("Rect Y");
+      highlightFolder.add(rectAreaLight.position, "z", -5, 5).name("Rect Z");
+      highlightFolder.add(rectAreaLight, "intensity", 0, 10).name("Rect Intensity");
+      highlightFolder.add(rectAreaLight, "width", 0, 5).name("Rect Width");
+      highlightFolder.add(rectAreaLight, "height", 0, 5).name("Rect Height");
 
-      // GUI Setup
-      const gui = new lil.GUI();
+      const fillerFolder = gui.addFolder("Filler Light");
+      fillerFolder.add(fillerLight.position, "x", -5, 5).name("Filler X");
+      fillerFolder.add(fillerLight.position, "y", -5, 5).name("Filler Y");
+      fillerFolder.add(fillerLight.position, "z", -5, 5).name("Filler Z");
+      fillerFolder.add(fillerLight, "intensity", 0, 5).name("Filler Intensity");
 
-      const lightFolder = gui.addFolder('Lighting');
-      const spotSettings = {
-        posX: 0.34, posY: 1, posZ: 0.45,
-        intensity: 20,
-        angle: 0.34,
-        penumbra: 0.3
+      const cameraFolder = gui.addFolder("Camera");
+      const camPos = {
+        camX: camera.position.x,
+        camY: camera.position.y,
+        camZ: camera.position.z,
       };
-      lightFolder.add(spotSettings, 'posX', -5, 5).onChange(v => spotLight.position.x = v);
-      lightFolder.add(spotSettings, 'posY', -5, 5).onChange(v => spotLight.position.y = v);
-      lightFolder.add(spotSettings, 'posZ', -5, 5).onChange(v => spotLight.position.z = v);
-      lightFolder.add(spotSettings, 'intensity', 0, 50).onChange(v => spotLight.intensity = v);
-      lightFolder.add(spotSettings, 'angle', 0, Math.PI / 2).onChange(v => spotLight.angle = v);
-      lightFolder.add(spotSettings, 'penumbra', 0, 1).onChange(v => spotLight.penumbra = v);
-
-      const highlightFolder = lightFolder.addFolder('Highlight Light');
-      const highlightSettings = {
-        posX: -0.65, posY: -0.1, posZ: -0.43,
-        intensity: 4.5,
-        width: 0.2,
-        height: 0.2
-      };
-      highlightFolder.add(highlightSettings, 'posX', -5, 5).onChange(v => highlight.position.x = v);
-      highlightFolder.add(highlightSettings, 'posY', -5, 5).onChange(v => highlight.position.y = v);
-      highlightFolder.add(highlightSettings, 'posZ', -5, 5).onChange(v => highlight.position.z = v);
-      highlightFolder.add(highlightSettings, 'intensity', 0, 20).onChange(v => highlight.intensity = v);
-      highlightFolder.add(highlightSettings, 'width', 0.1, 5).onChange(v => highlight.width = v);
-      highlightFolder.add(highlightSettings, 'height', 0.1, 5).onChange(v => highlight.height = v);
-
-      const fillerFolder = lightFolder.addFolder('Filler Light');
-      const fillerSettings = {
-        posX: 1.77, posY: -1.73, posZ: -1.77,
-        intensity: 0.4
-      };
-      fillerFolder.add(fillerSettings, 'posX', -5, 5).onChange(v => filler.position.x = v);
-      fillerFolder.add(fillerSettings, 'posY', -5, 5).onChange(v => filler.position.y = v);
-      fillerFolder.add(fillerSettings, 'posZ', -5, 5).onChange(v => filler.position.z = v);
-      fillerFolder.add(fillerSettings, 'intensity', 0, 5).onChange(v => filler.intensity = v);
-
-      const cameraFolder = gui.addFolder('Camera');
-      const cameraSettings = {
-        posX: camera.position.x,
-        posY: camera.position.y,
-        posZ: camera.position.z
-      };
-      cameraFolder.add(cameraSettings, 'posX', -10, 10).onChange(v => camera.position.x = v);
-      cameraFolder.add(cameraSettings, 'posY', -10, 10).onChange(v => camera.position.y = v);
-      cameraFolder.add(cameraSettings, 'posZ', -10, 10).onChange(v => camera.position.z = v);
-
-      // Interaksi drag custom (rotasi X & Y)
-      let isDragging = false;
-      let previousMousePosition = { x: 0, y: 0 };
-
-      window.addEventListener('mousedown', () => isDragging = true);
-      window.addEventListener('mouseup', () => isDragging = false);
-
-      window.addEventListener('mousemove', function (e) {
-        if (isDragging && model) {
-          let deltaMove = {
-            x: e.clientX - previousMousePosition.x,
-            y: e.clientY - previousMousePosition.y,
-          };
-
-          let deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(
-            new THREE.Euler(
-              toRadians(deltaMove.y * 1),
-              toRadians(deltaMove.x * 1),
-              0,
-              "XYZ"
-            )
-          );
-
-          model.quaternion.multiplyQuaternions(
-            model.quaternion,
-            deltaRotationQuaternion
-          );
-        }
-
-        previousMousePosition = {
-          x: e.clientX,
-          y: e.clientY,
-        };
+      cameraFolder.add(camPos, "camX", -10, 10).onChange((val) => {
+        camera.position.x = val;
+        camera.lookAt(0, 0, 0);
+      });
+      cameraFolder.add(camPos, "camY", -10, 10).onChange((val) => {
+        camera.position.y = val;
+        camera.lookAt(0, 0, 0);
+      });
+      cameraFolder.add(camPos, "camZ", 0.1, 10).onChange((val) => {
+        camera.position.z = val;
+        camera.lookAt(0, 0, 0);
       });
 
-      function toRadians(angle) {
-        return angle * (Math.PI / 180);
-      }
-
-      window.addEventListener('resize', () => {
+      // Handle resize
+      window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
+      // Animate
       function animate() {
         requestAnimationFrame(animate);
-
-        // model lookAt camera
-        if (model) {
-          model.lookAt(camera.position);
-        }
-
+        controls.update();
         renderer.render(scene, camera);
       }
-
       animate();
     </script>
   </body>
