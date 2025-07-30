@@ -2,128 +2,141 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Gass Logo</title>
+    <title>3D Model Viewer</title>
     <style>
-      body { margin: 0; background: #0C0D0C; overflow: hidden; }
-      canvas { display: block; }
-    </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
-          "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js",
-          "DRACOLoader": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/DRACOLoader.js",
-          "RectAreaLightUniformsLib": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/lights/RectAreaLightUniformsLib.js",
-          "dat.gui": "https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js"
-        }
+      body {
+        margin: 0;
+        overflow: hidden;
       }
-    </script>
+    </style>
   </head>
   <body>
-    <script type="module">
-      import * as THREE from 'three';
-      import { GLTFLoader } from 'GLTFLoader';
-      import { DRACOLoader } from 'DRACOLoader';
-      import { RectAreaLightUniformsLib } from 'RectAreaLightUniformsLib';
-      import { GUI } from 'dat.gui';
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.18.0/dist/lil-gui.min.js"></script>
 
-      RectAreaLightUniformsLib.init();
+    <script>
+      const scene = new THREE.Scene();
 
-      let scene = new THREE.Scene();
-      let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 0, 3);
 
-      let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.body.appendChild(renderer.domElement);
 
+      const loader = new THREE.GLTFLoader();
       let model;
-      let isDragging = false;
-      let previousMousePosition = { x: 0 };
-      let targetRotationY = 0;
-      let currentRotationY = 0;
 
-      const state = {
-        posZ: 0,
-        dragging: false,
-        rotY: 0,
-        camX: 0,
-        camY: 0,
-        camZ: 3
-      };
-
-      const lights = {
-        spot: new THREE.SpotLight(0xffffff, 20),
-        highlight: new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2),
-        filler: new THREE.RectAreaLight(0xffffff, 0.4, 5, 5)
-      };
-
-      lights.spot.position.set(0.34, 1, 0.45);
-      lights.spot.angle = 0.34;
-      lights.spot.penumbra = 0.3;
-      lights.spot.castShadow = true;
-      lights.spot.shadow.mapSize.set(2048, 2048);
-      lights.spot.shadow.radius = 0.5;
-      scene.add(lights.spot);
-      lights.spot.target.position.set(0, 0, 0);
-      scene.add(lights.spot.target);
-
-      lights.highlight.position.set(-0.65, -0.1, -0.43);
-      scene.add(lights.highlight);
-      lights.highlight.lookAt(0, 0, 0);
-
-      lights.filler.position.set(1.77, -1.73, -1.77);
-      scene.add(lights.filler);
-      lights.filler.lookAt(0, 0, 0);
-
-      const draco = new DRACOLoader();
-      draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
-
-      const loader = new GLTFLoader();
-      loader.setDRACOLoader(draco);
-      loader.load('asset/gass_logo1.glb', gltf => {
+      loader.load('model.glb', function (gltf) {
         model = gltf.scene;
-        model.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
         scene.add(model);
       });
 
-      const gui = new GUI();
+      // Lighting setup
+      const spotLight = new THREE.SpotLight(0xffffff, 20);
+      spotLight.position.set(0.34, 1, 0.45);
+      spotLight.angle = 0.34;
+      spotLight.penumbra = 0.3;
+      scene.add(spotLight);
 
-      const fCam = gui.addFolder('Camera');
-      fCam.add(state, 'camX', -10, 10, 0.01).name('Cam X').onChange(v => camera.position.x = v);
-      fCam.add(state, 'camY', -10, 10, 0.01).name('Cam Y').onChange(v => camera.position.y = v);
-      fCam.add(state, 'camZ', -10, 10, 0.01).name('Cam Z').onChange(v => camera.position.z = v);
-      fCam.open();
+      const highlight = new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
+      highlight.position.set(-0.65, -0.1, -0.43);
+      scene.add(highlight);
 
-      const fSpot = gui.addFolder('Spot Light');
-      fSpot.add(lights.spot, 'intensity', 0, 50).name('Intensity');
-      fSpot.add(lights.spot, 'angle', 0, Math.PI / 2).name('Spot Size');
-      fSpot.add(lights.spot, 'penumbra', 0, 1).name('Blend');
-      fSpot.add(lights.spot.position, 'x', -5, 5).name('X');
-      fSpot.add(lights.spot.position, 'y', -5, 5).name('Y');
-      fSpot.add(lights.spot.position, 'z', -5, 5).name('Z');
-      fSpot.open();
+      const filler = new THREE.PointLight(0xffffff, 0.4);
+      filler.position.set(1.77, -1.73, -1.77);
+      scene.add(filler);
 
-      const fHL = gui.addFolder('Highlight');
-      fHL.add(lights.highlight, 'intensity', 0, 50).name('Intensity');
-      fHL.add(lights.highlight.position, 'x', -5, 5).name('X');
-      fHL.add(lights.highlight.position, 'y', -5, 5).name('Y');
-      fHL.add(lights.highlight.position, 'z', -5, 5).name('Z');
-      fHL.add(lights.highlight, 'width', 0.01, 5).name('Width');
-      fHL.add(lights.highlight, 'height', 0.01, 5).name('Height');
-      fHL.open();
+      // GUI Setup
+      const gui = new lil.GUI();
 
-      const fFiller = gui.addFolder('Filler Light');
-      fFiller.add(lights.filler, 'intensity', 0, 50).name('Intensity');
-      fFiller.add(lights.filler.position, 'x', -5, 5).name('X');
-      fFiller.add(lights.filler.position, 'y', -5, 5).name('Y');
-      fFiller.add(lights.filler.position, 'z', -5, 5).name('Z');
-      fFiller.add(lights.filler, 'width', 0.1, 10).name('Width');
-      fFiller.add(lights.filler, 'height', 0.1, 10).name('Height');
-      fFiller.open();
+      const lightFolder = gui.addFolder('Lighting');
+      const spotSettings = {
+        posX: 0.34, posY: 1, posZ: 0.45,
+        intensity: 20,
+        angle: 0.34,
+        penumbra: 0.3
+      };
+      lightFolder.add(spotSettings, 'posX', -5, 5).onChange(v => spotLight.position.x = v);
+      lightFolder.add(spotSettings, 'posY', -5, 5).onChange(v => spotLight.position.y = v);
+      lightFolder.add(spotSettings, 'posZ', -5, 5).onChange(v => spotLight.position.z = v);
+      lightFolder.add(spotSettings, 'intensity', 0, 50).onChange(v => spotLight.intensity = v);
+      lightFolder.add(spotSettings, 'angle', 0, Math.PI / 2).onChange(v => spotLight.angle = v);
+      lightFolder.add(spotSettings, 'penumbra', 0, 1).onChange(v => spotLight.penumbra = v);
+
+      const highlightFolder = lightFolder.addFolder('Highlight Light');
+      const highlightSettings = {
+        posX: -0.65, posY: -0.1, posZ: -0.43,
+        intensity: 4.5,
+        width: 0.2,
+        height: 0.2
+      };
+      highlightFolder.add(highlightSettings, 'posX', -5, 5).onChange(v => highlight.position.x = v);
+      highlightFolder.add(highlightSettings, 'posY', -5, 5).onChange(v => highlight.position.y = v);
+      highlightFolder.add(highlightSettings, 'posZ', -5, 5).onChange(v => highlight.position.z = v);
+      highlightFolder.add(highlightSettings, 'intensity', 0, 20).onChange(v => highlight.intensity = v);
+      highlightFolder.add(highlightSettings, 'width', 0.1, 5).onChange(v => highlight.width = v);
+      highlightFolder.add(highlightSettings, 'height', 0.1, 5).onChange(v => highlight.height = v);
+
+      const fillerFolder = lightFolder.addFolder('Filler Light');
+      const fillerSettings = {
+        posX: 1.77, posY: -1.73, posZ: -1.77,
+        intensity: 0.4
+      };
+      fillerFolder.add(fillerSettings, 'posX', -5, 5).onChange(v => filler.position.x = v);
+      fillerFolder.add(fillerSettings, 'posY', -5, 5).onChange(v => filler.position.y = v);
+      fillerFolder.add(fillerSettings, 'posZ', -5, 5).onChange(v => filler.position.z = v);
+      fillerFolder.add(fillerSettings, 'intensity', 0, 5).onChange(v => filler.intensity = v);
+
+      const cameraFolder = gui.addFolder('Camera');
+      const cameraSettings = {
+        posX: camera.position.x,
+        posY: camera.position.y,
+        posZ: camera.position.z
+      };
+      cameraFolder.add(cameraSettings, 'posX', -10, 10).onChange(v => camera.position.x = v);
+      cameraFolder.add(cameraSettings, 'posY', -10, 10).onChange(v => camera.position.y = v);
+      cameraFolder.add(cameraSettings, 'posZ', -10, 10).onChange(v => camera.position.z = v);
+
+      // Interaksi drag custom (rotasi X & Y)
+      let isDragging = false;
+      let previousMousePosition = { x: 0, y: 0 };
+
+      window.addEventListener('mousedown', () => isDragging = true);
+      window.addEventListener('mouseup', () => isDragging = false);
+
+      window.addEventListener('mousemove', function (e) {
+        if (isDragging && model) {
+          let deltaMove = {
+            x: e.clientX - previousMousePosition.x,
+            y: e.clientY - previousMousePosition.y,
+          };
+
+          let deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(
+              toRadians(deltaMove.y * 1),
+              toRadians(deltaMove.x * 1),
+              0,
+              "XYZ"
+            )
+          );
+
+          model.quaternion.multiplyQuaternions(
+            model.quaternion,
+            deltaRotationQuaternion
+          );
+        }
+
+        previousMousePosition = {
+          x: e.clientX,
+          y: e.clientY,
+        };
+      });
+
+      function toRadians(angle) {
+        return angle * (Math.PI / 180);
+      }
 
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -131,39 +144,13 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      document.addEventListener('mousedown', e => {
-        isDragging = true;
-        previousMousePosition.x = e.clientX;
-      });
-
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-      });
-
-      document.addEventListener('mousemove', e => {
-        if (isDragging && model) {
-          const deltaX = e.clientX - previousMousePosition.x;
-          targetRotationY += deltaX * 0.005;
-          previousMousePosition.x = e.clientX;
-        }
-      });
-
-      document.addEventListener('wheel', e => {
-        state.posZ += e.deltaY * 0.001;
-      });
-
       function animate() {
         requestAnimationFrame(animate);
-        if (!model) return;
 
-        if (!isDragging) {
-          targetRotationY += (2 * Math.PI) / (62 * 60);
+        // model lookAt camera
+        if (model) {
+          model.lookAt(camera.position);
         }
-
-        currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
-        model.rotation.y = currentRotationY;
-        model.position.z = THREE.MathUtils.lerp(model.position.z, state.posZ, 0.1);
-        camera.lookAt(0, 0, 0);
 
         renderer.render(scene, camera);
       }
