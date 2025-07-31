@@ -47,7 +47,6 @@
       let currentRotationY = 0;
 
       const state = {
-        posZ: 0,
         dragging: false,
         rotY: 0,
         camX: 0,
@@ -148,23 +147,18 @@
         }
       });
 
-      document.addEventListener('wheel', e => {
-        state.posZ += e.deltaY * 0.001;
-      });
-
       function animate() {
         requestAnimationFrame(animate);
         if (!model) return;
 
         if (!isDragging) {
-          targetRotationY += (2 * Math.PI) / (62 * 60);
+          targetRotationY += (2 * Math.PI) / (62 * 60); // idle auto-rotate
         }
 
         currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
         model.rotation.y = currentRotationY;
-        model.position.z = THREE.MathUtils.lerp(model.position.z, state.posZ, 0.1);
-        camera.lookAt(0, 0, 0);
 
+        camera.lookAt(0, 0, 0);
         renderer.render(scene, camera);
       }
 
