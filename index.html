@@ -31,7 +31,7 @@
 
       let scene = new THREE.Scene();
       let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 0, 3);
+      camera.position.set(0, 0, 2.5);
 
       let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -62,7 +62,7 @@
       };
 
       lights.spot.position.set(0.34, 1, 0.45);
-      lights.spot.angle = 0.34;
+      lights.spot.angle = 0.46;
       lights.spot.penumbra = 0.3;
       lights.spot.castShadow = true;
       lights.spot.shadow.mapSize.set(2048, 2048);
