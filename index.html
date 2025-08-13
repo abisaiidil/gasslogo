@@ -53,7 +53,7 @@
         tiltXdeg: -10 // default tilt ke atas
       };
 
-      // Lights (sesuai setting terakhirmu)
+      // Lights
       const spot = new THREE.SpotLight(0xffffff, 20);
       spot.position.set(0.34, 1, 0.45);
       spot.angle = 0.46;
@@ -89,7 +89,6 @@
 
         scene.add(model);
 
-        // Setelah model ada, baru tambahkan GUI untuk rotasi model
         const fModel = gui.addFolder('Model');
         fModel.add(state, 'tiltXdeg', -45, 45, 0.1).name('Tilt X (deg)').onChange(v => {
           if (model) model.rotation.x = THREE.MathUtils.degToRad(v);
