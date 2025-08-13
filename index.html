@@ -31,7 +31,7 @@
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(-0.87, -0.21, 2.44);
+      camera.position.set(-1.53, -0.21, 1.12);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -50,7 +50,7 @@
         camX: camera.position.x,
         camY: camera.position.y,
         camZ: camera.position.z,
-        tiltXdeg: -10 // default tilt ke atas
+        tiltXdeg: -6 // default tilt
       };
 
       // Lights 
