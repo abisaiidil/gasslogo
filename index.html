@@ -1,112 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Gass Logo</title>
-    <style>
-      body { margin: 0; background: #0C0D0C; overflow: hidden; }
-      canvas { display: block; }
-    </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
-          "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js",
-          "DRACOLoader": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/DRACOLoader.js",
-          "RectAreaLightUniformsLib": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/lights/RectAreaLightUniformsLib.js",
-          "dat.gui": "https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js"
-        }
-      }
-    </script>
-  </head>
-  <body>
-    <script type="module">
-      import * as THREE from 'three';
-      import { GLTFLoader } from 'GLTFLoader';
-      import { DRACOLoader } from 'DRACOLoader';
-      import { RectAreaLightUniformsLib } from 'RectAreaLightUniformsLib';
-      import { GUI } from 'dat.gui';
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Logo</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #000; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+    import { OrbitControls } from "https://unpkg.com/three@0.165.0/examples/jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "https://unpkg.com/three@0.165.0/examples/jsm/loaders/GLTFLoader.js";
 
-      RectAreaLightUniformsLib.init();
+    // Scene
+    const scene = new THREE.Scene();
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(-0.65, -0.65, 2.44);
+    // Camera
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 3);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    // Light
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1, 1, 1);
+    scene.add(light);
+
+    // Load GLTF
+    const loader = new GLTFLoader();
+    loader.load('./asset/gass_logo1.glb', (gltf) => {
+      const model = gltf.scene;
+      model.rotation.x = Math.PI / 12; // tilt sedikit ke atas
+      scene.add(model);
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      document.body.appendChild(renderer.domElement);
+    });
 
-      let model;
-      let isDragging = false;
-      let previousMousePosition = { x: 0 };
-      let targetRotationY = 0;
-      let currentRotationY = 0;
-
-      const state = {
-        camX: camera.position.x,
-        camY: camera.position.y,
-        camZ: camera.position.z,
-        tiltXdeg: -10 // default tilt ke atas
-      };
-
-      // Lights
-      const spot = new THREE.SpotLight(0xffffff, 20);
-      spot.position.set(0.34, 1, 0.45);
-      spot.angle = 0.46;
-      spot.penumbra = 0.3;
-      spot.castShadow = true;
-      spot.shadow.mapSize.set(2048, 2048);
-      spot.shadow.radius = 0.5;
-      scene.add(spot);
-      spot.target.position.set(0, 0, 0);
-      scene.add(spot.target);
-
-      const areaHL = new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
-      areaHL.position.set(-0.65, -0.1, -0.43);
-      scene.add(areaHL);
-      areaHL.lookAt(0, 0, 0);
-
-      const areaFiller = new THREE.RectAreaLight(0xffffff, 0.4, 5, 5);
-      areaFiller.position.set(1.77, -1.73, -1.77);
-      scene.add(areaFiller);
-      areaFiller.lookAt(0, 0, 0);
-
-      // Load model
-      const draco = new DRACOLoader();
-      draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
-      const loader = new GLTFLoader();
-      loader.setDRACOLoader(draco);
-      loader.load('asset/gass_logo1.glb', (gltf) => {
-        model = gltf.scene;
-        model.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
-
-        // Tilt ke atas (NEGATIF = mendongak)
-        model.rotation.x = THREE.MathUtils.degToRad(state.tiltXdeg);
-
-        scene.add(model);
-
-        const fModel = gui.addFolder('Model');
-        fModel.add(state, 'tiltXdeg', -45, 45, 0.1).name('Tilt X (deg)').onChange(v => {
-          if (model) model.rotation.x = THREE.MathUtils.degToRad(v);
-        });
-        // Kalau ingin bisa atur Y juga:
-        // fModel.add(model.rotation, 'y', -Math.PI, Math.PI, 0.01).name('Rotate Y');
-        fModel.open();
-      });
-
-      // GUI
-      const gui = new GUI();
-
-      const fCam = gui.addFolder('Camera');
-      fCam.add(state, 'camX', -10, 10, 0.01).name('Cam X').onChange(v => camera.position.x = v);
-      fCam.add(state, 'camY', -10, 10, 0.01).name('Cam Y').onChange(v => camera.position.y = v);
-      fCam.add(state, 'camZ', -10, 10, 0.01).name('Cam Z').onChange(v => camera.position.z = v);
-      fCam.open();
-
-      const fSpot = gui.addFolder('Spot Light');
-      fSpot.add(spot, 'intensity', 0, 50).name('Intensity');
-      fSp
+    // Animate
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
