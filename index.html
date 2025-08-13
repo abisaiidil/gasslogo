@@ -31,7 +31,7 @@
 
       let scene = new THREE.Scene();
       let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 0, 2.5);
+      camera.position.set(-0.65, -0.65, 2.44);
 
       let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -49,9 +49,9 @@
       const state = {
         dragging: false,
         rotY: 0,
-        camX: 0,
-        camY: 0,
-        camZ: 2.5
+        camX: -0.65,
+        camY: -0.65,
+        camZ: 2.44
       };
 
       const lights = {
@@ -86,6 +86,10 @@
       loader.load('asset/gass_logo1.glb', gltf => {
         model = gltf.scene;
         model.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
+        
+        // Tilt objek sedikit ke atas (10 derajat)
+        model.rotation.x = THREE.MathUtils.degToRad(10);
+
         scene.add(model);
       });
 
@@ -151,10 +155,7 @@
         requestAnimationFrame(animate);
         if (!model) return;
 
-        if (!isDragging) {
-          targetRotationY += (2 * Math.PI) / (62 * 60); // idle auto-rotate
-        }
-
+        // Tidak ada auto-rotate, hanya update jika drag
         currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
         model.rotation.y = currentRotationY;
 
