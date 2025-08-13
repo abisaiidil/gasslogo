@@ -31,7 +31,7 @@
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(-0.65, -0.65, 2.44);
+      camera.position.set(-0.87, -0.21, 2.44);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -53,7 +53,7 @@
         tiltXdeg: -10 // default tilt ke atas
       };
 
-      // Lights (sesuai setting terakhirmu)
+      // Lights 
       const spot = new THREE.SpotLight(0xffffff, 20);
       spot.position.set(0.34, 1, 0.45);
       spot.angle = 0.46;
@@ -84,7 +84,7 @@
         model = gltf.scene;
         model.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
 
-        // Tilt ke atas (NEGATIF = mendongak)
+        // Tilt ke atas (NEGATIF)
         model.rotation.x = THREE.MathUtils.degToRad(state.tiltXdeg);
 
         scene.add(model);
@@ -94,7 +94,6 @@
         fModel.add(state, 'tiltXdeg', -45, 45, 0.1).name('Tilt X (deg)').onChange(v => {
           if (model) model.rotation.x = THREE.MathUtils.degToRad(v);
         });
-        // Kalau ingin bisa atur Y juga:
         // fModel.add(model.rotation, 'y', -Math.PI, Math.PI, 0.01).name('Rotate Y');
         fModel.open();
       });
@@ -142,7 +141,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      // Drag rotasi Y saja (sesuai versi sekarang)
+      // Drag rotasi Y aja
       document.addEventListener('mousedown', e => {
         isDragging = true;
         previousMousePosition.x = e.clientX;
@@ -161,7 +160,6 @@
       function animate() {
         requestAnimationFrame(animate);
         if (model) {
-          // Tidak ada auto-rotate
           currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
           model.rotation.y = currentRotationY;
         }
