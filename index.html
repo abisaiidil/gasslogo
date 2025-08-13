@@ -29,11 +29,11 @@
 
       RectAreaLightUniformsLib.init();
 
-      let scene = new THREE.Scene();
-      let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(-0.65, -0.65, 2.44);
 
-      let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.shadowMap.enabled = true;
@@ -47,52 +47,59 @@
       let currentRotationY = 0;
 
       const state = {
-        dragging: false,
-        rotY: 0,
-        camX: -0.65,
-        camY: -0.65,
-        camZ: 2.44
+        camX: camera.position.x,
+        camY: camera.position.y,
+        camZ: camera.position.z,
+        tiltXdeg: -10 // default tilt ke atas
       };
 
-      const lights = {
-        spot: new THREE.SpotLight(0xffffff, 20),
-        highlight: new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2),
-        filler: new THREE.RectAreaLight(0xffffff, 0.4, 5, 5)
-      };
+      // Lights (sesuai setting terakhirmu)
+      const spot = new THREE.SpotLight(0xffffff, 20);
+      spot.position.set(0.34, 1, 0.45);
+      spot.angle = 0.46;
+      spot.penumbra = 0.3;
+      spot.castShadow = true;
+      spot.shadow.mapSize.set(2048, 2048);
+      spot.shadow.radius = 0.5;
+      scene.add(spot);
+      spot.target.position.set(0, 0, 0);
+      scene.add(spot.target);
 
-      lights.spot.position.set(0.34, 1, 0.45);
-      lights.spot.angle = 0.46;
-      lights.spot.penumbra = 0.3;
-      lights.spot.castShadow = true;
-      lights.spot.shadow.mapSize.set(2048, 2048);
-      lights.spot.shadow.radius = 0.5;
-      scene.add(lights.spot);
-      lights.spot.target.position.set(0, 0, 0);
-      scene.add(lights.spot.target);
+      const areaHL = new THREE.RectAreaLight(0xffffff, 4.5, 0.2, 0.2);
+      areaHL.position.set(-0.65, -0.1, -0.43);
+      scene.add(areaHL);
+      areaHL.lookAt(0, 0, 0);
 
-      lights.highlight.position.set(-0.65, -0.1, -0.43);
-      scene.add(lights.highlight);
-      lights.highlight.lookAt(0, 0, 0);
+      const areaFiller = new THREE.RectAreaLight(0xffffff, 0.4, 5, 5);
+      areaFiller.position.set(1.77, -1.73, -1.77);
+      scene.add(areaFiller);
+      areaFiller.lookAt(0, 0, 0);
 
-      lights.filler.position.set(1.77, -1.73, -1.77);
-      scene.add(lights.filler);
-      lights.filler.lookAt(0, 0, 0);
-
+      // Load model
       const draco = new DRACOLoader();
       draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/libs/draco/');
-
       const loader = new GLTFLoader();
       loader.setDRACOLoader(draco);
-      loader.load('asset/gass_logo1.glb', gltf => {
+      loader.load('asset/gass_logo1.glb', (gltf) => {
         model = gltf.scene;
         model.traverse(c => c.isMesh && (c.castShadow = c.receiveShadow = true));
-        
-        // Tilt objek sedikit ke atas (10 derajat)
-        model.rotation.x = THREE.MathUtils.degToRad(10);
+
+        // Tilt ke atas (NEGATIF = mendongak)
+        model.rotation.x = THREE.MathUtils.degToRad(state.tiltXdeg);
 
         scene.add(model);
+
+        // Setelah model ada, baru tambahkan GUI untuk rotasi model
+        const fModel = gui.addFolder('Model');
+        fModel.add(state, 'tiltXdeg', -45, 45, 0.1).name('Tilt X (deg)').onChange(v => {
+          if (model) model.rotation.x = THREE.MathUtils.degToRad(v);
+        });
+        // Kalau ingin bisa atur Y juga:
+        // fModel.add(model.rotation, 'y', -Math.PI, Math.PI, 0.01).name('Rotate Y');
+        fModel.open();
       });
 
+      // GUI
       const gui = new GUI();
 
       const fCam = gui.addFolder('Camera');
@@ -102,68 +109,5 @@
       fCam.open();
 
       const fSpot = gui.addFolder('Spot Light');
-      fSpot.add(lights.spot, 'intensity', 0, 50).name('Intensity');
-      fSpot.add(lights.spot, 'angle', 0, Math.PI / 2).name('Spot Size');
-      fSpot.add(lights.spot, 'penumbra', 0, 1).name('Blend');
-      fSpot.add(lights.spot.position, 'x', -5, 5).name('X');
-      fSpot.add(lights.spot.position, 'y', -5, 5).name('Y');
-      fSpot.add(lights.spot.position, 'z', -5, 5).name('Z');
-      fSpot.open();
-
-      const fHL = gui.addFolder('Highlight');
-      fHL.add(lights.highlight, 'intensity', 0, 50).name('Intensity');
-      fHL.add(lights.highlight.position, 'x', -5, 5).name('X');
-      fHL.add(lights.highlight.position, 'y', -5, 5).name('Y');
-      fHL.add(lights.highlight.position, 'z', -5, 5).name('Z');
-      fHL.add(lights.highlight, 'width', 0.01, 5).name('Width');
-      fHL.add(lights.highlight, 'height', 0.01, 5).name('Height');
-      fHL.open();
-
-      const fFiller = gui.addFolder('Filler Light');
-      fFiller.add(lights.filler, 'intensity', 0, 50).name('Intensity');
-      fFiller.add(lights.filler.position, 'x', -5, 5).name('X');
-      fFiller.add(lights.filler.position, 'y', -5, 5).name('Y');
-      fFiller.add(lights.filler.position, 'z', -5, 5).name('Z');
-      fFiller.add(lights.filler, 'width', 0.1, 10).name('Width');
-      fFiller.add(lights.filler, 'height', 0.1, 10).name('Height');
-      fFiller.open();
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      document.addEventListener('mousedown', e => {
-        isDragging = true;
-        previousMousePosition.x = e.clientX;
-      });
-
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-      });
-
-      document.addEventListener('mousemove', e => {
-        if (isDragging && model) {
-          const deltaX = e.clientX - previousMousePosition.x;
-          targetRotationY += deltaX * 0.005;
-          previousMousePosition.x = e.clientX;
-        }
-      });
-
-      function animate() {
-        requestAnimationFrame(animate);
-        if (!model) return;
-
-        // Tidak ada auto-rotate, hanya update jika drag
-        currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.05);
-        model.rotation.y = currentRotationY;
-
-        camera.lookAt(0, 0, 0);
-        renderer.render(scene, camera);
-      }
-
-      animate();
-    </script>
-  </body>
-</html>
+      fSpot.add(spot, 'intensity', 0, 50).name('Intensity');
+      fSp
